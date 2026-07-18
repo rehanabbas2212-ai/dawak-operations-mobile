@@ -1,0 +1,20 @@
+DAWAK OPERATIONS MOBILE - GITHUB UPLOAD
+=======================================
+
+1. Extract this ZIP on your Windows computer.
+2. Open your empty GitHub repository.
+3. Click "uploading an existing file".
+4. Open the extracted Dawak_Website_Upload_v0.3.0 folder.
+5. Select ALL files and the vendor folder, then drag them onto GitHub.
+6. In the Commit changes box type: Publish Dawak Operations Mobile v0.3.0
+7. Click Commit changes.
+
+Do not upload any OCC database, database password, user password, service_role
+key, .env file, patient spreadsheet, or patient photograph.
+
+After the files appear in GitHub:
+1. Open repository Settings.
+2. Open Pages.
+3. Under Build and deployment choose Deploy from a branch.
+4. Branch: main, Folder: / (root), then Save.
+5. Wait a few minutes and refresh the Pages screen for the public HTTPS link.

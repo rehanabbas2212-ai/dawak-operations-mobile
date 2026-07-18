@@ -1,0 +1,11 @@
+{
+  "name": "Dawak Operations Mobile",
+  "short_name": "Dawak Ops",
+  "description": "Driver delivery assistant and cash custody tracker",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#123b64",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

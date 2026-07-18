@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#123b64">
+  <meta name="description" content="Dawak Driver Assist and Cash Custody">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+  <title>Dawak Operations Mobile</title>
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.3.0</span></div>
+    <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
+  </header>
+  <main>
+    <section id="loginCard" class="card login-card">
+      <p class="eyebrow">SECURE LOGIN</p><h1>Welcome</h1>
+      <p class="muted">Use your individual employee account.</p>
+      <form id="loginForm" class="form-grid login-grid">
+        <label>Email<input id="email" type="email" autocomplete="username" required></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+        <button class="primary" type="submit">Log in</button>
+      </form>
+      <div id="loginStatus"></div>
+    </section>
+
+    <div id="app" class="hidden">
+      <nav class="tabs" aria-label="Modules">
+        <button class="tab active" data-tab="delivery">Delivery Assist</button>
+        <button class="tab" data-tab="cash">Cash Custody</button>
+      </nav>
+
+      <section id="deliveryTab" class="tab-panel">
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">SCAN OR ENTER</p><h2>Find delivery location</h2></div><span class="safe-badge">Read-only OCC lookup</span></div>
+          <div class="awb-row"><input id="deliveryAwb" placeholder="Scan or enter AWB" autocapitalize="characters"><button id="lookupAwb" class="primary">Search</button></div>
+          <button id="scanAwb" class="secondary wide">▣ Scan AWB with camera</button>
+          <div id="scannerWrap" class="scanner hidden"><div id="reader"></div><button id="stopScanner" class="secondary wide">Stop camera</button></div>
+          <div id="deliveryStatus"></div>
+        </section>
+
+        <section id="deliveryResult" class="card hidden">
+          <div class="section-heading"><div><p class="eyebrow">CURRENT ORDER</p><h2 id="patientName">Patient</h2><p id="currentAwb" class="mono"></p></div><span id="locationBadge" class="pill"></span></div>
+          <div class="info-grid"><div><span>Assigned driver</span><strong id="assignedDriver"></strong></div><div><span>Current status</span><strong id="orderStatus"></strong></div></div>
+          <div id="previousBlock">
+            <h3>Most recent eligible previous delivery</h3>
+            <div class="info-grid"><div><span>Previous AWB</span><strong id="previousAwb"></strong></div><div><span>Delivered</span><strong id="previousDate"></strong></div></div>
+            <div class="address"><span>Previous address</span><p id="previousAddress"></p></div>
+            <button id="openMaps" class="maps wide">Open previous pin in Google Maps</button>
+          </div>
+          <hr><h3>Required call attempts</h3>
+          <div class="two"><button id="call1" class="call">Call attempt 1</button><button id="call2" class="call" disabled>Call attempt 2</button></div><p id="callStatus" class="muted"></p>
+          <hr><h3>WhatsApp with patient name and photo</h3>
+          <label class="file-label" for="photo">Take or choose photo</label><input id="photo" class="hidden" type="file" accept="image/*" capture="environment"><p id="photoName" class="muted">No photo selected</p>
+          <div class="two"><button id="sharePhoto" class="whatsapp">Share message + photo</button><button id="whatsappText" class="secondary">Message only</button></div>
+          <p class="privacy">The photo stays on the phone. Confirm the correct patient in WhatsApp before sending.</p>
+        </section>
+      </section>
+
+      <section id="cashTab" class="tab-panel hidden">
+        <section class="card cash-admin">
+          <p class="eyebrow">COORDINATOR / HUB LEADER</p><h2>Add AWB payment line</h2>
+          <p class="muted">Cash and card remain separate. Only CASH can enter a physical custody batch.</p>
+          <div class="form-grid five"><label>AWB<input id="cashAwb" placeholder="AWB"></label><label>Payment<select id="paymentType"><option>CASH</option><option>CARD</option></select></label><label>Amount<input id="amount" type="number" min="0" step="0.01" placeholder="AED"></label><label>Origin hub<select id="originHub"></select></label><label>Final destination<select id="destinationHub"></select></label></div>
+          <button id="addItem" class="primary">Add payment line</button><div id="itemStatus"></div>
+        </section>
+        <section class="card cash-admin">
+          <h2>Create cash batch</h2>
+          <div class="form-grid four"><label>Bag / batch number<input id="batchName" placeholder="Bag number"></label><label>Origin hub<select id="batchOrigin"></select></label><label>Final destination<select id="batchDestination"></select></label><label>Cash AWBs<input id="batchAwbs" placeholder="Comma-separated AWBs"></label></div>
+          <button id="createBatch" class="primary">Create batch</button><div id="batchStatus"></div>
+        </section>
+        <section class="card">
+          <div class="section-heading"><div><p class="eyebrow">LIVE CUSTODY</p><h2>Cash batches</h2></div><button id="refreshCash" class="secondary">Refresh</button></div><div id="cashStatus"></div>
+          <div class="table-wrap"><table><thead><tr><th>Batch</th><th>Route</th><th>Cash</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit</th></tr></thead><tbody id="batches"></tbody></table></div>
+          <div id="auditPanel" class="audit hidden"></div>
+        </section>
+      </section>
+    </div>
+  </main>
+  <div id="busy" class="busy hidden"><div class="spinner"></div><span>Working…</span></div>
+  <script src="config.js"></script>
+  <script src="vendor/html5-qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
