@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.3.1</span></div>
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.4.0</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -73,6 +73,7 @@
         </section>
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">LIVE CUSTODY</p><h2>Cash batches</h2></div><button id="refreshCash" class="secondary">Refresh</button></div><div id="cashStatus"></div>
+          <div id="cashSummary" class="summary-grid" aria-label="Cash custody summary"></div>
           <div class="table-wrap"><table><thead><tr><th>Batch</th><th>Route</th><th>Cash</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit</th></tr></thead><tbody id="batches"></tbody></table></div>
           <div id="auditPanel" class="audit hidden"></div>
         </section>

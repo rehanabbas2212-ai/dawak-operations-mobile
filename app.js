@@ -1,7 +1,7 @@
 "use strict";
 const cfg=window.DAWAK_CONFIG||{};
 const $=id=>document.getElementById(id);
-const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],delivery:null,scanner:null};
+const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],hubAccess:[],delivery:null,scanner:null};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notice=(id,text,ok=false)=>$(id).innerHTML=text?`<div class="status ${ok?'ok':'error'}">${esc(text)}</div>`:'';
 const busy=v=>$('busy').classList.toggle('hidden',!v);
@@ -22,6 +22,10 @@ function cleanAwb(v){return String(v||'').trim().toUpperCase().replace(/\s+/g,''
 function formatDate(v){if(!v)return 'Unknown';const d=new Date(v);return Number.isNaN(d.getTime())?v:d.toLocaleString('en-AE',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
 function nameFor(id){const p=state.profiles.find(x=>x.id===id);return p?.full_name||p?.email||'—'}
 function hubFor(id){return state.hubs.find(x=>x.id===id)?.name||'—'}
+function accessFor(id){return state.hubAccess.find(x=>x.hub_id===id)}
+function canManageHub(id){return Boolean(accessFor(id)?.can_manage_cash)}
+function canReceiveHub(id){return Boolean(accessFor(id)?.can_receive_cash)}
+function myHubNames(){const names=state.hubAccess.filter(x=>x.can_view_cash).map(x=>hubFor(x.hub_id)).filter(x=>x!=='—');return names.length?names.join(', '):hubFor(state.me?.hub_id)}
 
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();notice('loginStatus','');busy(true);try{
   const result=await api('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email:$('email').value.trim(),password:$('password').value}});
@@ -32,16 +36,18 @@ async function start(){
   const profileResult=await api('/rest/v1/rpc/my_profile',{method:'POST',body:{}});
   state.me=Array.isArray(profileResult)?profileResult[0]:profileResult;
   if(!state.me)throw new Error('Your account is inactive.');
-  [state.hubs,state.profiles]=await Promise.all([
+  [state.hubs,state.profiles,state.hubAccess]=await Promise.all([
     api('/rest/v1/hubs?select=id,code,name&active=eq.true&order=name'),
-    api('/rest/v1/profiles?select=id,full_name,email,role,hub_id,driver_name&active=eq.true&order=full_name')
+    api('/rest/v1/profiles?select=id,full_name,email,role,hub_id,driver_name&active=eq.true&order=full_name'),
+    api(`/rest/v1/profile_hubs?select=hub_id,can_view_cash,can_manage_cash,can_receive_cash&profile_id=eq.${encodeURIComponent(state.me.id)}`)
   ]);
   $('loginCard').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');
-  $('who').textContent=`${state.me.full_name||state.me.email} • ${state.me.role} • ${hubFor(state.me.hub_id)}`;
-  document.querySelectorAll('.cash-admin').forEach(x=>x.classList.toggle('hidden',!['coordinator','hub_leader'].includes(state.me.role)));
+  $('who').textContent=`${state.me.full_name||state.me.email} • ${state.me.role} • ${myHubNames()}`;
+  const cashAdmin=['coordinator','hub_leader'].includes(state.me.role)&&state.hubAccess.some(x=>x.can_manage_cash);
+  document.querySelectorAll('.cash-admin').forEach(x=>x.classList.toggle('hidden',!cashAdmin));
   fillHubs();await refreshCash();
 }
-function logout(){state.token='';state.me=null;state.delivery=null;sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.3.1'}
+function logout(){state.token='';state.me=null;state.delivery=null;state.hubAccess=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.4.0';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden')}
 $('logout').onclick=logout;
 
 document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{
@@ -49,7 +55,7 @@ document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{
   $('deliveryTab').classList.toggle('hidden',button.dataset.tab!=='delivery');$('cashTab').classList.toggle('hidden',button.dataset.tab!=='cash');
 });
 
-function fillHubs(){for(const id of ['originHub','destinationHub','batchOrigin','batchDestination'])$(id).innerHTML=state.hubs.map(h=>`<option value="${h.id}">${esc(h.name)}</option>`).join('')}
+function fillHubs(){const all=state.hubs.map(h=>`<option value="${h.id}">${esc(h.name)}</option>`).join('');const managed=state.hubs.filter(h=>canManageHub(h.id)).map(h=>`<option value="${h.id}">${esc(h.name)}</option>`).join('');for(const id of ['originHub','batchOrigin'])$(id).innerHTML=managed;for(const id of ['destinationHub','batchDestination'])$(id).innerHTML=all}
 
 // DELIVERY ASSIST
 $('lookupAwb').onclick=lookupDelivery;$('deliveryAwb').addEventListener('keydown',e=>{if(e.key==='Enter')lookupDelivery()});
@@ -80,8 +86,9 @@ async function stopScanner(){if(state.scanner){try{if(state.scanner.isScanning)a
 $('addItem').onclick=async()=>{try{await api('/rest/v1/rpc/create_payment_line',{method:'POST',body:{p_awb:$('cashAwb').value,p_type:$('paymentType').value,p_amount:Number($('amount').value),p_origin:$('originHub').value,p_destination:$('destinationHub').value}});notice('itemStatus','Payment line added.',true);$('cashAwb').value='';$('amount').value=''}catch(e){notice('itemStatus',e.message)}};
 $('createBatch').onclick=async()=>{try{const awbs=$('batchAwbs').value.split(',').map(cleanAwb).filter(Boolean);if(!awbs.length)throw new Error('Enter at least one cash AWB.');await api('/rest/v1/rpc/create_cash_batch',{method:'POST',body:{p_name:$('batchName').value,p_origin:$('batchOrigin').value,p_destination:$('batchDestination').value,p_awbs:awbs}});notice('batchStatus','Cash batch created.',true);await refreshCash()}catch(e){notice('batchStatus',e.message)}};
 $('refreshCash').onclick=refreshCash;
-async function refreshCash(){if(!state.token)return;try{notice('cashStatus','');const rows=await api('/rest/v1/cash_batches?select=*&order=created_at.desc&limit=100');$('batches').innerHTML=rows.map(renderBatch).join('')||'<tr><td colspan="8">No batches yet.</td></tr>'}catch(e){notice('cashStatus',e.message)}}
-function renderBatch(b){let action='—';if(b.pending_to===state.me.id)action=`<button onclick="acceptCash('${b.id}')">Accept cash</button>`;else if(b.current_custodian===state.me.id&&!['RECEIVED','EXCEPTION','HANDOVER_PENDING'].includes(b.status)){const options=state.profiles.filter(p=>p.id!==state.me.id).map(p=>`<option value="${p.id}">${esc(p.full_name||p.email)} (${esc(p.role)})</option>`).join('');action=`<div class="action-stack"><select id="to-${b.id}">${options}</select><input id="seal-${b.id}" placeholder="Seal / bag"><button onclick="handoverCash('${b.id}')">Hand over</button>`;if(state.me.role!=='driver'&&state.me.hub_id===b.destination_hub_id)action+=`<input id="count-${b.id}" type="number" step="0.01" placeholder="Counted AED"><button onclick="finalCash('${b.id}')">Final count & receive</button>`;action+='</div>'}return `<tr><td>${esc(b.batch_name)}</td><td>${esc(hubFor(b.origin_hub_id))} → ${esc(hubFor(b.destination_hub_id))}</td><td>AED ${Number(b.expected_amount).toFixed(2)}</td><td><span class="pill">${esc(b.status)}</span></td><td>${esc(nameFor(b.current_custodian))}<br><small>${esc(hubFor(b.current_hub_id))}</small></td><td>${esc(nameFor(b.pending_to))}</td><td>${action}</td><td><button class="secondary" onclick="showAudit('${b.id}','${esc(b.batch_name)}')">History</button></td></tr>`}
+async function refreshCash(){if(!state.token)return;try{notice('cashStatus','');const rows=await api('/rest/v1/cash_batches?select=*&order=created_at.desc&limit=100');renderCashSummary(rows);$('batches').innerHTML=rows.map(renderBatch).join('')||'<tr><td colspan="8">No batches yet.</td></tr>'}catch(e){notice('cashStatus',e.message)}}
+function renderCashSummary(rows){const active=rows.filter(x=>!['RECEIVED','EXCEPTION'].includes(x.status));const received=rows.filter(x=>x.status==='RECEIVED');const exceptions=rows.filter(x=>x.status==='EXCEPTION');const activeCash=active.reduce((n,x)=>n+Number(x.expected_amount||0),0);$('cashSummary').innerHTML=`<div><span>Active batches</span><strong>${active.length}</strong></div><div><span>Active cash</span><strong>AED ${activeCash.toFixed(2)}</strong></div><div><span>Received</span><strong>${received.length}</strong></div><div><span>Exceptions</span><strong>${exceptions.length}</strong></div>`}
+function renderBatch(b){let action='—';if(state.me.role!=='viewer'&&b.pending_to===state.me.id)action=`<button onclick="acceptCash('${b.id}')">Accept cash</button>`;else if(state.me.role!=='viewer'&&b.current_custodian===state.me.id&&!['RECEIVED','EXCEPTION','HANDOVER_PENDING'].includes(b.status)){const options=state.profiles.filter(p=>p.id!==state.me.id&&p.role!=='viewer').map(p=>`<option value="${p.id}">${esc(p.full_name||p.email)} (${esc(p.role)})</option>`).join('');action=`<div class="action-stack"><select id="to-${b.id}">${options}</select><input id="seal-${b.id}" placeholder="Seal / bag"><button onclick="handoverCash('${b.id}')">Hand over</button>`;if(['coordinator','hub_leader'].includes(state.me.role)&&canReceiveHub(b.destination_hub_id))action+=`<input id="count-${b.id}" type="number" step="0.01" placeholder="Counted AED"><button onclick="finalCash('${b.id}')">Final count & receive</button>`;action+='</div>'}return `<tr><td>${esc(b.batch_name)}</td><td>${esc(hubFor(b.origin_hub_id))} → ${esc(hubFor(b.destination_hub_id))}</td><td>AED ${Number(b.expected_amount).toFixed(2)}</td><td><span class="pill">${esc(b.status)}</span></td><td>${esc(nameFor(b.current_custodian))}<br><small>${esc(hubFor(b.current_hub_id))}</small></td><td>${esc(nameFor(b.pending_to))}</td><td>${action}</td><td><button class="secondary" onclick="showAudit('${b.id}','${esc(b.batch_name)}')">History</button></td></tr>`}
 window.handoverCash=async id=>{try{await api('/rest/v1/rpc/initiate_handover',{method:'POST',body:{p_batch:id,p_to:$(`to-${id}`).value,p_seal:$(`seal-${id}`).value,p_notes:''}});await refreshCash()}catch(e){notice('cashStatus',e.message)}};
 window.acceptCash=async id=>{try{await api('/rest/v1/rpc/accept_handover',{method:'POST',body:{p_batch:id}});await refreshCash()}catch(e){notice('cashStatus',e.message)}};
 window.finalCash=async id=>{try{const amount=Number($(`count-${id}`).value);if(!Number.isFinite(amount))throw new Error('Enter the counted amount.');const result=await api('/rest/v1/rpc/final_receive',{method:'POST',body:{p_batch:id,p_counted:amount,p_notes:''}});notice('cashStatus',result==='RECEIVED'?'Final receipt confirmed.':'Amount differs. Batch is an exception.',result==='RECEIVED');await refreshCash()}catch(e){notice('cashStatus',e.message)}};
