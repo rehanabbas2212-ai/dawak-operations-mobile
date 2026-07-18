@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.4.0</span></div>
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.5.0</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -61,20 +61,37 @@
 
       <section id="cashTab" class="tab-panel hidden">
         <section class="card cash-admin">
-          <p class="eyebrow">COORDINATOR / HUB LEADER</p><h2>Add AWB payment line</h2>
-          <p class="muted">Cash and card remain separate. Only CASH can enter a physical custody batch.</p>
-          <div class="form-grid five"><label>AWB<input id="cashAwb" placeholder="AWB"></label><label>Payment<select id="paymentType"><option>CASH</option><option>CARD</option></select></label><label>Amount<input id="amount" type="number" min="0" step="0.01" placeholder="AED"></label><label>Origin hub<select id="originHub"></select></label><label>Final destination<select id="destinationHub"></select></label></div>
-          <button id="addItem" class="primary">Add payment line</button><div id="itemStatus"></div>
+          <p class="eyebrow">AWB PAYMENT RECORD</p><h2>Record payment and driver cash receipt</h2>
+          <p class="muted">For CASH, record which facility owns the AWB, which driver collected the money, and where the driver physically handed it over. CARD stays separate and never enters a cash bag.</p>
+          <div class="form-grid cash-receipt-grid">
+            <label>AWB<input id="cashAwb" placeholder="AWB"></label>
+            <label>Payment<select id="paymentType"><option>CASH</option><option>CARD</option></select></label>
+            <label>Amount<input id="amount" type="number" min="0" step="0.01" placeholder="AED"></label>
+            <label>Order facility<select id="orderFacility"></select></label>
+            <label>Collected by driver<select id="collectedBy"></select></label>
+            <label>First cash-receiving hub<select id="receivingHub"></select></label>
+            <label>Final cash destination<select id="destinationHub"></select></label>
+          </div>
+          <button id="addItem" class="primary">Record payment line</button><div id="itemStatus"></div>
         </section>
         <section class="card cash-admin">
           <h2>Create cash batch</h2>
-          <div class="form-grid four"><label>Bag / batch number<input id="batchName" placeholder="Bag number"></label><label>Origin hub<select id="batchOrigin"></select></label><label>Final destination<select id="batchDestination"></select></label><label>Cash AWBs<input id="batchAwbs" placeholder="Comma-separated AWBs"></label></div>
+          <p class="muted">The formal bag custody starts at the first hub that received the money from the driver.</p>
+          <div class="form-grid four"><label>Bag / batch number<input id="batchName" placeholder="Bag number"></label><label>First cash-receiving hub<select id="batchReceiving"></select></label><label>Final cash destination<select id="batchDestination"></select></label><label>Cash AWBs<input id="batchAwbs" placeholder="Comma-separated AWBs"></label></div>
           <button id="createBatch" class="primary">Create batch</button><div id="batchStatus"></div>
         </section>
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">LIVE CUSTODY</p><h2>Cash batches</h2></div><button id="refreshCash" class="secondary">Refresh</button></div><div id="cashStatus"></div>
           <div id="cashSummary" class="summary-grid" aria-label="Cash custody summary"></div>
           <div class="table-wrap"><table><thead><tr><th>Batch</th><th>Route</th><th>Cash</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit</th></tr></thead><tbody id="batches"></tbody></table></div>
+          <div id="verificationPanel" class="audit hidden">
+            <div class="section-heading"><div><p class="eyebrow">DESTINATION CHECK</p><h3 id="verificationTitle">Verify batch AWBs</h3></div><span id="verificationCount" class="pill"></span></div>
+            <p class="muted">Scan or enter every AWB physically received. Missing AWBs remain red and final receipt stays blocked.</p>
+            <div class="awb-row"><input id="verifyAwbInput" placeholder="Scan or enter batch AWB" autocapitalize="characters"><button id="verifyAwbButton" class="primary">Verify</button></div>
+            <button id="verifyScanButton" class="secondary wide">▣ Scan batch AWB with camera</button>
+            <div id="batchScannerWrap" class="scanner hidden"><div id="batchReader"></div><button id="stopBatchScanner" class="secondary wide">Stop camera</button></div>
+            <div id="verificationStatus"></div><div id="verificationItems" class="verification-list"></div>
+          </div>
           <div id="auditPanel" class="audit hidden"></div>
         </section>
       </section>
