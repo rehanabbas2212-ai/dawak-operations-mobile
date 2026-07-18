@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.3.0</span></div>
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.3.1</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -53,10 +53,9 @@
           </div>
           <hr><h3>Required call attempts</h3>
           <div class="two"><button id="call1" class="call">Call attempt 1</button><button id="call2" class="call" disabled>Call attempt 2</button></div><p id="callStatus" class="muted"></p>
-          <hr><h3>WhatsApp with patient name and photo</h3>
-          <label class="file-label" for="photo">Take or choose photo</label><input id="photo" class="hidden" type="file" accept="image/*" capture="environment"><p id="photoName" class="muted">No photo selected</p>
-          <div class="two"><button id="sharePhoto" class="whatsapp">Share message + photo</button><button id="whatsappText" class="secondary">Message only</button></div>
-          <p class="privacy">The photo stays on the phone. Confirm the correct patient in WhatsApp before sending.</p>
+          <hr><h3>WhatsApp customer message</h3>
+          <button id="whatsappText" class="whatsapp wide">Message customer on WhatsApp</button>
+          <p class="privacy">This opens the customer's WhatsApp chat with the message and patient name filled in. Confirm the customer before sending.</p>
         </section>
       </section>
 

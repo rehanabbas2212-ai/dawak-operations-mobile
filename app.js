@@ -1,7 +1,7 @@
 "use strict";
 const cfg=window.DAWAK_CONFIG||{};
 const $=id=>document.getElementById(id);
-const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],delivery:null,scanner:null,photo:null};
+const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],delivery:null,scanner:null};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notice=(id,text,ok=false)=>$(id).innerHTML=text?`<div class="status ${ok?'ok':'error'}">${esc(text)}</div>`:'';
 const busy=v=>$('busy').classList.toggle('hidden',!v);
@@ -41,7 +41,7 @@ async function start(){
   document.querySelectorAll('.cash-admin').forEach(x=>x.classList.toggle('hidden',!['coordinator','hub_leader'].includes(state.me.role)));
   fillHubs();await refreshCash();
 }
-function logout(){state.token='';state.me=null;state.delivery=null;sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.3.0'}
+function logout(){state.token='';state.me=null;state.delivery=null;sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.3.1'}
 $('logout').onclick=logout;
 
 document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{
@@ -56,14 +56,19 @@ $('lookupAwb').onclick=lookupDelivery;$('deliveryAwb').addEventListener('keydown
 async function lookupDelivery(){const awb=cleanAwb($('deliveryAwb').value);notice('deliveryStatus','');if(!awb){notice('deliveryStatus','Scan or enter an AWB first.');return}busy(true);try{
   const result=await api('/rest/v1/rpc/lookup_delivery',{method:'POST',body:{p_awb:awb}});state.delivery=Array.isArray(result)?result[0]:result;renderDelivery();
 }catch(error){$('deliveryResult').classList.add('hidden');notice('deliveryStatus',error.message)}finally{busy(false)}}
-function renderDelivery(){const r=state.delivery,o=r.current_order,l=r.previous_location;$('deliveryResult').classList.remove('hidden');$('patientName').textContent=o.patient_name||'Patient name unavailable';$('currentAwb').textContent=o.tracking_number;$('assignedDriver').textContent=o.driver_name||'Not assigned';$('orderStatus').textContent=[o.last_status,o.dropoff_status].filter(Boolean).join(' / ')||'Not available';$('previousBlock').classList.toggle('hidden',!r.location_found);$('locationBadge').textContent=r.location_found?'Previous location found':'No eligible location';if(l){$('previousAwb').textContent=l.tracking_number;$('previousDate').textContent=formatDate(l.delivery_complete_date);$('previousAddress').textContent=l.address||'Address not available';$('openMaps').dataset.url=l.google_maps_url}renderCalls(r.call_attempts||[]);state.photo=null;$('photo').value='';$('photoName').textContent='No photo selected';$('deliveryResult').scrollIntoView({behavior:'smooth',block:'start'})}
+function renderDelivery(){const r=state.delivery,o=r.current_order,l=r.previous_location;$('deliveryResult').classList.remove('hidden');$('patientName').textContent=o.patient_name||'Patient name unavailable';$('currentAwb').textContent=o.tracking_number;$('assignedDriver').textContent=o.driver_name||'Not assigned';$('orderStatus').textContent=[o.last_status,o.dropoff_status].filter(Boolean).join(' / ')||'Not available';$('previousBlock').classList.toggle('hidden',!r.location_found);$('locationBadge').textContent=r.location_found?'Previous location found':'No eligible location';if(l){$('previousAwb').textContent=l.tracking_number;$('previousDate').textContent=formatDate(l.delivery_complete_date);$('previousAddress').textContent=l.address||'Address not available';$('openMaps').dataset.url=l.google_maps_url}renderCalls(r.call_attempts||[]);$('deliveryResult').scrollIntoView({behavior:'smooth',block:'start'})}
 function renderCalls(attempts){const first=attempts.some(x=>Number(x.attempt_number)===1),second=attempts.some(x=>Number(x.attempt_number)===2);$('call1').disabled=first;$('call1').classList.toggle('done',first);$('call1').textContent=first?'Attempt 1 recorded ✓':'Call attempt 1';$('call2').disabled=!first||second;$('call2').classList.toggle('done',second);$('call2').textContent=second?'Attempt 2 recorded ✓':'Call attempt 2';$('callStatus').textContent=second?'Two calls are recorded.':first?'Attempt 1 recorded. Attempt 2 unlocks after 60 seconds.':'Both call attempts must be started here.'}
 async function recordCall(){if(!state.delivery)return;try{const result=await api('/rest/v1/rpc/record_delivery_call',{method:'POST',body:{p_awb:state.delivery.current_order.tracking_number}});state.delivery.call_attempts.push({attempt_number:result.attempt_number,attempted_at:result.attempted_at});renderCalls(state.delivery.call_attempts);location.href=`tel:${String(result.phone||'').replace(/[^\d+]/g,'')}`}catch(error){$('callStatus').textContent=error.message}}
 $('call1').onclick=recordCall;$('call2').onclick=recordCall;
 $('openMaps').onclick=async()=>{if(!state.delivery)return;const url=$('openMaps').dataset.url;window.open(url,'_blank','noopener');await logDelivery('MAP_OPENED',url)};
-$('photo').onchange=e=>{state.photo=e.target.files?.[0]||null;$('photoName').textContent=state.photo?`${state.photo.name} selected`:'No photo selected'};
-function whatsappMessage(){const patient=state.delivery?.current_order?.patient_name||'Patient',driver=state.me?.full_name||'delivery driver';return `Hello ${patient}, this is ${driver} from Dawak medicine delivery. I tried calling regarding your delivery. Kindly share your current location and nearest landmark so I can reach you. Thank you.`}
-$('sharePhoto').onclick=async()=>{if(!state.delivery)return;if(!state.photo){alert('Take or choose the photo first.');return}const share={title:'Dawak delivery',text:whatsappMessage(),files:[state.photo]};if(!navigator.share||(navigator.canShare&&!navigator.canShare(share))){alert('Photo sharing needs Chrome on Android. Use message only on this device.');return}try{await navigator.share(share);await logDelivery('PHOTO_SHARED',state.photo.name)}catch(e){if(e.name!=='AbortError')alert(e.message)}};
+function whatsappMessage(){const patient=state.delivery?.current_order?.patient_name||'Patient name unavailable';return `Aslam Alikum, Good Day Ma'am/Sir,
+
+I’m from DAWAK Pharmacy. Your medicine is ready for delivery. Could you please send your location and villa number. Thank you and wishing you good health and wellness.
+
+السلام عليكم يومك سعيد أنا من صيدلية دواك.
+دواك جاهز للتوصيل الرجاء منك مشاركة الموقع ورقم الفيلا من خلال الرقم الذي سأتواصل معك من خلاله وشكرا لك مع تمنياتنا لك بدوام الصحة والعافية.
+
+The delivery is for Patient Name: ${patient}`}
 $('whatsappText').onclick=async()=>{if(!state.delivery)return;const phone=String(state.delivery.current_order.phone||'').replace(/\D/g,'');if(!phone){alert('No patient phone number is available.');return}await logDelivery('WHATSAPP_PREPARED','message-only');window.open(`https://wa.me/${phone}?text=${encodeURIComponent(whatsappMessage())}`,'_blank','noopener')};
 async function logDelivery(action,details){try{await api('/rest/v1/rpc/log_delivery_activity',{method:'POST',body:{p_awb:state.delivery.current_order.tracking_number,p_action:action,p_details:String(details||'').slice(0,500)}})}catch{}}
 
