@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.0</span></div>
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.4</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -62,28 +62,28 @@
       <section id="cashTab" class="tab-panel hidden">
         <section class="card cash-admin">
           <p class="eyebrow">1. INDIVIDUAL AWB</p><h2>Record payment received from driver</h2>
-          <p class="muted">Record every AWB separately so it can always be searched. For CASH, select who collected it, where it was first received, and its final cash destination.</p>
+          <p class="muted">Record every CASH and CARD AWB separately so it can always be searched. Both can travel in one bag, but only CASH counts toward the physical cash total.</p>
           <div class="form-grid cash-receipt-grid">
             <label>AWB<input id="cashAwb" placeholder="AWB" autocapitalize="characters"></label>
             <label>Payment<select id="paymentType"><option>CASH</option><option>CARD</option></select></label>
             <label>Amount<input id="amount" type="number" min="0" step="0.01" placeholder="AED"></label>
             <label>Order facility<select id="orderFacility"></select></label>
             <label>Collected by driver<select id="collectedBy"></select></label>
-            <label>First cash-receiving hub<select id="receivingHub"></select></label>
-            <label>Final cash destination<select id="destinationHub"></select></label>
+            <label>First payment-receiving hub<select id="receivingHub"></select></label>
+            <label>Final payment destination<select id="destinationHub"></select></label>
           </div>
-          <button id="addItem" class="primary">Record payment line</button><div id="itemStatus"></div>
+          <button id="addItem" class="primary">Record CASH AWB</button><div id="itemStatus"></div>
         </section>
 
         <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">AWB LOOKUP</p><h2>Search cash AWB</h2></div><span class="safe-badge">Full custody chain</span></div>
+          <div class="section-heading"><div><p class="eyebrow">AWB LOOKUP</p><h2>Search payment AWB</h2></div><span class="safe-badge">Full custody chain</span></div>
           <div class="awb-row"><input id="cashSearchAwb" placeholder="Enter SD / AWB number" autocapitalize="characters"><button id="cashSearchButton" class="primary">Search</button></div>
           <div id="cashSearchStatus"></div><div id="cashSearchResult" class="hidden"></div>
         </section>
 
         <section class="card cash-admin">
           <p class="eyebrow">2. DRIVER TRANSPORT</p><h2>Create mixed-destination transport bag</h2>
-          <p class="muted">Select any ready AWBs at this hub. They may have different final destinations. The driver receives and accepts the whole sealed bag once.</p>
+          <p class="muted">Select ready CASH and CARD AWBs together. They may have different final destinations. The driver accepts the whole sealed bag once; only CASH is included in the physical cash total.</p>
           <div class="form-grid transport-grid">
             <label>Bag / seal number<input id="bagName" placeholder="Bag number"></label>
             <label>Bag starts from<select id="bagFromHub"></select></label>
@@ -91,18 +91,18 @@
             <button id="refreshAvailableAwbs" class="secondary">Load ready AWBs</button>
           </div>
           <div id="availableStatus"></div><div id="availableAwbs" class="available-list"></div>
-          <div id="selectedBagSummary" class="selected-summary">0 AWBs selected • AED 0.00</div>
+          <div id="selectedBagSummary" class="selected-summary">0 AWBs • CASH 0 / AED 0.00 • CARD 0 / AED 0.00 (not cash)</div>
           <button id="createTransportBag" class="primary">Create transport bag</button><div id="bagStatus"></div>
         </section>
 
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">LIVE CUSTODY</p><h2>Transport bags</h2></div><button id="refreshCash" class="secondary">Refresh</button></div><div id="cashStatus"></div>
           <div id="cashSummary" class="summary-grid" aria-label="Cash custody summary"></div>
-          <div class="table-wrap"><table><thead><tr><th>Bag</th><th>Transport leg</th><th>AWBs</th><th>Cash</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit</th></tr></thead><tbody id="batches"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>Bag</th><th>Transport leg</th><th>AWBs</th><th>Cash total</th><th>Card records</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit</th></tr></thead><tbody id="batches"></tbody></table></div>
 
           <div id="arrivalPanel" class="audit hidden">
             <div class="section-heading"><div><p class="eyebrow">HUB RECONCILIATION</p><h3 id="arrivalTitle">Check arrived AWBs</h3></div><span id="arrivalCount" class="pill"></span></div>
-            <p class="muted">Scan each AWB once. AWBs for this hub close as final received. Other AWBs become ready for the next transport bag.</p>
+            <p class="muted">Scan each AWB once. CASH is marked received, CARD is acknowledged as a record, and onward AWBs become ready for the next transport bag.</p>
             <div class="awb-row"><input id="arrivalAwbInput" placeholder="Scan or enter AWB" autocapitalize="characters"><button id="processArrivalAwb" class="primary">Check AWB</button></div>
             <button id="arrivalScanButton" class="secondary wide">▣ Scan AWB with camera</button>
             <div id="arrivalScannerWrap" class="scanner hidden"><div id="arrivalReader"></div><button id="stopArrivalScanner" class="secondary wide">Stop camera</button></div>
