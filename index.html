@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.6</span></div>
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.9</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -46,7 +46,7 @@
           <div class="section-heading"><div><p class="eyebrow">CURRENT ORDER</p><h2 id="patientName">Patient</h2><p id="currentAwb" class="mono"></p></div><span id="locationBadge" class="pill"></span></div>
           <div class="info-grid"><div><span>Assigned driver</span><strong id="assignedDriver"></strong></div><div><span>Current status</span><strong id="orderStatus"></strong></div></div>
           <div id="previousBlock">
-            <div class="section-heading"><div><h3>Previous delivery locations</h3><p class="muted">Newest delivery first. Every card is one completed previous delivery.</p></div><span id="previousCount" class="pill"></span></div>
+            <div class="section-heading"><div><h3>Previous successful delivery locations</h3><p class="muted">Returned and failed locations are skipped. Newest successful delivery appears first.</p></div><span id="previousCount" class="pill"></span></div>
             <div id="previousLocations" class="location-history-list"></div>
           </div>
           <hr><h3>Required call attempts</h3>

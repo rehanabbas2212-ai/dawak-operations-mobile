@@ -49,7 +49,7 @@ async function start(){
   fillHubs();await refreshCash();
   if(isCashAdmin()&&$('bagFromHub').value)await loadAvailableAwbs();
 }
-function logout(){stopArrivalScanner();stopScanner();state.token='';state.me=null;state.delivery=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.6.6';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden')}
+function logout(){stopArrivalScanner();stopScanner();state.token='';state.me=null;state.delivery=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.6.9';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden')}
 $('logout').onclick=logout;
 
 document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{
@@ -76,15 +76,21 @@ function renderDelivery(){
   const statusText=[o.status_group,o.last_status,o.dropoff_status].filter(Boolean).join(' ').toUpperCase();
   const returned=Boolean(r.returned_order||o.returned_order||o.is_returned||statusText.includes('RETURN'));
   const rawLocations=Array.isArray(r.previous_locations)?r.previous_locations:(r.previous_location?[r.previous_location]:[]);
-  const locations=returned?[]:rawLocations;
+  const locations=rawLocations;
   $('deliveryResult').classList.remove('hidden');
   $('patientName').textContent=o.patient_name||'Patient name unavailable';
   $('currentAwb').textContent=o.tracking_number;
   $('assignedDriver').textContent=o.driver_name||'Not assigned';
   $('orderStatus').textContent=returned?'RETURNED':[o.last_status,o.dropoff_status].filter(Boolean).join(' / ')||'Not available';
-  $('previousBlock').classList.toggle('hidden',returned||locations.length===0);
-  $('locationBadge').textContent=returned?'Returned order — location lookup skipped':locations.length?`${locations.length} previous ${locations.length===1?'location':'locations'}`:'No eligible location';
-  $('previousCount').textContent=returned?'Return to hub':locations.length?`${locations.length} found`:'';
+  $('previousBlock').classList.toggle('hidden',locations.length===0);
+  $('locationBadge').textContent=returned
+    ? (locations.length
+        ? `Returned current order • ${locations.length} previous delivered ${locations.length===1?'location':'locations'}`
+        : 'Returned current order • no previous delivered location')
+    : (locations.length
+        ? `${locations.length} previous ${locations.length===1?'location':'locations'}`
+        : 'No eligible location');
+  $('previousCount').textContent=locations.length?`${locations.length} valid delivered found`:'';
   $('previousLocations').innerHTML=locations.map((l,index)=>`<article class="location-history-card"><div class="location-card-heading"><div><span class="location-number">${index+1}</span><strong>${esc(formatDate(l.delivery_complete_date))}</strong></div><span class="mono">${esc(l.tracking_number||'Previous AWB unavailable')}</span></div><div class="location-address"><span>Previous address</span><p>${esc(l.address||'Address not available')}</p></div><div class="location-coordinates"><span>${esc(l.latitude??'')}</span><span>${esc(l.longitude??'')}</span></div><button class="maps wide location-map-button" data-map-url="${esc(l.google_maps_url||'')}" data-location-awb="${esc(l.tracking_number||'')}">Open this pin in Google Maps</button></article>`).join('');
   renderCalls(r.call_attempts||[]);
   $('deliveryResult').scrollIntoView({behavior:'smooth',block:'start'});
