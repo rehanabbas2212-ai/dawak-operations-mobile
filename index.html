@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.5</span></div>
+    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.6</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -46,10 +46,8 @@
           <div class="section-heading"><div><p class="eyebrow">CURRENT ORDER</p><h2 id="patientName">Patient</h2><p id="currentAwb" class="mono"></p></div><span id="locationBadge" class="pill"></span></div>
           <div class="info-grid"><div><span>Assigned driver</span><strong id="assignedDriver"></strong></div><div><span>Current status</span><strong id="orderStatus"></strong></div></div>
           <div id="previousBlock">
-            <h3>Most recent eligible previous delivery</h3>
-            <div class="info-grid"><div><span>Previous AWB</span><strong id="previousAwb"></strong></div><div><span>Delivered</span><strong id="previousDate"></strong></div></div>
-            <div class="address"><span>Previous address</span><p id="previousAddress"></p></div>
-            <button id="openMaps" class="maps wide">Open previous pin in Google Maps</button>
+            <div class="section-heading"><div><h3>Previous delivery locations</h3><p class="muted">Newest delivery first. Every card is one completed previous delivery.</p></div><span id="previousCount" class="pill"></span></div>
+            <div id="previousLocations" class="location-history-list"></div>
           </div>
           <hr><h3>Required call attempts</h3>
           <div class="two"><button id="call1" class="call">Call attempt 1</button><button id="call2" class="call" disabled>Call attempt 2</button></div><p id="callStatus" class="muted"></p>
@@ -82,8 +80,8 @@
         </section>
 
         <section class="card cash-admin">
-          <p class="eyebrow">2. MASTER JOURNEY</p><h2>Create mixed-destination master bag</h2>
-          <p class="muted">Select ready CASH and CARD AWBs together. This creates Leg 1. After each checkpoint verifies its AWBs, all remaining AWBs move automatically into the next numbered leg.</p>
+          <p class="eyebrow">2. DRIVER TRANSPORT</p><h2>Create mixed-destination transport bag</h2>
+          <p class="muted">Select ready CASH and CARD AWBs together. They may have different final destinations. The driver accepts the whole sealed bag once; only CASH is included in the physical cash total.</p>
           <div class="form-grid transport-grid">
             <label>Bag / seal number<input id="bagName" placeholder="Bag number"></label>
             <label>Bag starts from<select id="bagFromHub"></select></label>
@@ -92,7 +90,7 @@
           </div>
           <div id="availableStatus"></div><div id="availableAwbs" class="available-list"></div>
           <div id="selectedBagSummary" class="selected-summary">0 AWBs • CASH 0 / AED 0.00 • CARD 0 / AED 0.00 (not cash)</div>
-          <button id="createTransportBag" class="primary">Create master bag (Leg 1)</button><div id="bagStatus"></div>
+          <button id="createTransportBag" class="primary">Create transport bag</button><div id="bagStatus"></div>
         </section>
 
         <section class="card">
@@ -102,23 +100,11 @@
 
           <div id="arrivalPanel" class="audit hidden">
             <div class="section-heading"><div><p class="eyebrow">HUB RECONCILIATION</p><h3 id="arrivalTitle">Check arrived AWBs</h3></div><span id="arrivalCount" class="pill"></span></div>
-            <p class="muted">Scan each AWB once. Final-destination records are completed here. Onward AWBs are verified here and then carried automatically into the next numbered leg.</p>
+            <p class="muted">Scan each AWB once. CASH is marked received, CARD is acknowledged as a record, and onward AWBs become ready for the next transport bag.</p>
             <div class="awb-row"><input id="arrivalAwbInput" placeholder="Scan or enter AWB" autocapitalize="characters"><button id="processArrivalAwb" class="primary">Check AWB</button></div>
             <button id="arrivalScanButton" class="secondary wide">▣ Scan AWB with camera</button>
             <div id="arrivalScannerWrap" class="scanner hidden"><div id="arrivalReader"></div><button id="stopArrivalScanner" class="secondary wide">Stop camera</button></div>
             <div id="arrivalStatus"></div><div id="arrivalItems" class="verification-list"></div>
-            <div id="nextLegPanel" class="next-leg hidden">
-              <p class="eyebrow">AUTOMATIC NEXT LEG</p>
-              <h3 id="nextLegTitle">Continue remaining AWBs</h3>
-              <p id="nextLegHelp" class="muted"></p>
-              <div class="form-grid next-leg-grid">
-                <label>Next checkpoint<select id="nextLegHub"></select></label>
-                <label>Hand whole bag to<select id="nextLegRecipient"></select></label>
-                <label>New seal<input id="nextLegSeal" placeholder="Seal / bag"></label>
-                <label class="proof-upload">📷 Add next-leg proof (optional)<input id="nextLegProof" type="file" accept="image/*" capture="environment"></label>
-              </div>
-              <button id="startNextLeg" class="primary">Start automatic next leg</button>
-            </div>
           </div>
           <div id="auditPanel" class="audit hidden"></div>
         </section>
