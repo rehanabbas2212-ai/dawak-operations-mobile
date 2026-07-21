@@ -49,7 +49,7 @@ async function start(){
   fillHubs();await refreshCash();
   if(isCashAdmin()&&$('bagFromHub').value)await loadAvailableAwbs();
 }
-function logout(){stopArrivalScanner();stopScanner();state.token='';state.me=null;state.delivery=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.6.10';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden')}
+function logout(){stopArrivalScanner();stopScanner();state.token='';state.me=null;state.delivery=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.6.11';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden')}
 $('logout').onclick=logout;
 
 document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{
@@ -69,7 +69,7 @@ function fillHubs(){
 // DELIVERY ASSIST
 $('lookupAwb').onclick=lookupDelivery;$('deliveryAwb').addEventListener('keydown',e=>{if(e.key==='Enter')lookupDelivery()});
 async function lookupDelivery(){const awb=cleanAwb($('deliveryAwb').value);notice('deliveryStatus','');if(!awb){notice('deliveryStatus','Scan or enter an AWB first.');return}busy(true);try{
-  const result=await api('/rest/v1/rpc/lookup_delivery',{method:'POST',body:{p_awb:awb}});state.delivery=Array.isArray(result)?result[0]:result;renderDelivery();
+  const result=await api('/rest/v1/rpc/lookup_delivery_mrn',{method:'POST',body:{p_awb:awb}});state.delivery=Array.isArray(result)?result[0]:result;renderDelivery();
 }catch(error){$('deliveryResult').classList.add('hidden');notice('deliveryStatus',error.message)}finally{busy(false)}}
 function renderDelivery(){
   const r=state.delivery,o=r.current_order;
