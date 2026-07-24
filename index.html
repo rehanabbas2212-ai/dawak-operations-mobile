@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#123b64">
-  <meta name="description" content="Dawak Driver Assist and Cash Custody">
+  <meta name="description" content="Dawak Cash Custody">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="app.css">
-  <title>Dawak Operations Mobile</title>
+  <title>Dawak Cash Custody</title>
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Operations Mobile</strong><span id="who">Secure pilot v0.6.13</span></div>
+    <div><strong>Dawak Cash Custody</strong><span id="who">Cash Custody v0.7.0</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -28,36 +28,13 @@
     </section>
 
     <div id="app" class="hidden">
-      <nav class="tabs" aria-label="Modules">
-        <button class="tab active" data-tab="delivery">Delivery Assist</button>
-        <button class="tab" data-tab="cash">Cash Custody</button>
-      </nav>
-
-      <section id="deliveryTab" class="tab-panel">
-        <section class="card">
-          <div class="section-heading"><div><p class="eyebrow">SCAN OR ENTER</p><h2>Find delivery location</h2></div><span class="safe-badge">Read-only OCC lookup</span></div>
-          <div class="awb-row"><input id="deliveryAwb" placeholder="Scan or enter AWB" autocapitalize="characters"><button id="lookupAwb" class="primary">Search</button></div>
-          <button id="scanAwb" class="secondary wide">▣ Scan AWB with camera</button>
-          <div id="scannerWrap" class="scanner hidden"><div id="reader"></div><button id="stopScanner" class="secondary wide">Stop camera</button></div>
-          <div id="deliveryStatus"></div>
-        </section>
-
-        <section id="deliveryResult" class="card hidden">
-          <div class="section-heading"><div><p class="eyebrow">CURRENT ORDER</p><h2 id="patientName">Patient</h2><p id="currentAwb" class="mono"></p></div><span id="locationBadge" class="pill"></span></div>
-          <div class="info-grid"><div><span>Assigned driver</span><strong id="assignedDriver"></strong></div><div><span>Current status</span><strong id="orderStatus"></strong></div></div>
-          <div id="previousBlock">
-            <div class="section-heading"><div><h3>Previous successful delivery locations</h3><p class="muted">Returned and failed locations are skipped. Newest successful delivery appears first.</p></div><span id="previousCount" class="pill"></span></div>
-            <div id="previousLocations" class="location-history-list"></div>
-          </div>
-          <hr><h3>Required call attempts</h3>
-          <div class="two"><button id="call1" class="call">Call attempt 1</button><button id="call2" class="call" disabled>Call attempt 2</button></div><p id="callStatus" class="muted"></p>
-          <hr><h3>WhatsApp customer message</h3>
-          <button id="whatsappText" class="whatsapp wide">Message customer on WhatsApp</button>
-          <p class="privacy">This opens the customer's WhatsApp chat with the message and patient name filled in. Confirm the customer before sending.</p>
-        </section>
+      <section class="cash-header card">
+        <p class="eyebrow">SECURE CASH CONTROL</p>
+        <h1>Cash Custody</h1>
+        <p class="muted">Record payment AWBs, create sealed transport bags, acknowledge every handover, and maintain the full custody trail.</p>
       </section>
 
-      <section id="cashTab" class="tab-panel hidden">
+      <section id="cashTab" class="tab-panel">
         <section class="card cash-admin">
           <p class="eyebrow">1. INDIVIDUAL AWB</p><h2>Record payment received from driver</h2>
           <p class="muted">Record every CASH and CARD AWB separately so it can always be searched. Both can travel in one bag, but only CASH counts toward the physical cash total.</p>

@@ -1,7 +1,7 @@
 "use strict";
 const cfg=window.DAWAK_CONFIG||{};
 const $=id=>document.getElementById(id);
-const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],hubAccess:[],delivery:null,scanner:null,arrivalScanner:null,arrivalBatch:null,arrivalItems:[],availableAwbs:[],batches:[]};
+const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],hubAccess:[],arrivalScanner:null,arrivalBatch:null,arrivalItems:[],availableAwbs:[],batches:[]};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notice=(id,text,ok=false)=>$(id).innerHTML=text?`<div class="status ${ok?'ok':'error'}">${esc(text)}</div>`:'';
 const busy=v=>$('busy').classList.toggle('hidden',!v);
@@ -49,13 +49,8 @@ async function start(){
   fillHubs();await refreshCash();
   if(isCashAdmin()&&$('bagFromHub').value)await loadAvailableAwbs();
 }
-function logout(){stopArrivalScanner();stopScanner();state.token='';state.me=null;state.delivery=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Secure pilot v0.6.13';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden')}
+function logout(){stopArrivalScanner();state.token='';state.me=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Cash Custody v0.7.0';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden')}
 $('logout').onclick=logout;
-
-document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===button));
-  $('deliveryTab').classList.toggle('hidden',button.dataset.tab!=='delivery');$('cashTab').classList.toggle('hidden',button.dataset.tab!=='cash');
-});
 
 function fillHubs(){
   const all=state.hubs.map(h=>`<option value="${h.id}">${esc(h.name)}</option>`).join('');
@@ -66,47 +61,7 @@ function fillHubs(){
   $('collectedBy').innerHTML=drivers||'<option value="">No active drivers</option>';
 }
 
-// DELIVERY ASSIST
-$('lookupAwb').onclick=lookupDelivery;$('deliveryAwb').addEventListener('keydown',e=>{if(e.key==='Enter')lookupDelivery()});
-async function lookupDelivery(){const awb=cleanAwb($('deliveryAwb').value);notice('deliveryStatus','');if(!awb){notice('deliveryStatus','Scan or enter an AWB first.');return}busy(true);try{
-  const result=await api('/rest/v1/rpc/lookup_delivery_compact',{method:'POST',body:{p_awb:awb}});state.delivery=Array.isArray(result)?result[0]:result;renderDelivery();
-}catch(error){$('deliveryResult').classList.add('hidden');notice('deliveryStatus',error.message)}finally{busy(false)}}
-function renderDelivery(){
-  const r=state.delivery,o=r.current_order;
-  const statusText=[o.status_group,o.last_status,o.dropoff_status].filter(Boolean).join(' ').toUpperCase();
-  const returned=Boolean(r.returned_order||o.returned_order||o.is_returned||statusText.includes('RETURN'));
-  const rawLocations=Array.isArray(r.previous_locations)?r.previous_locations:(r.previous_location?[r.previous_location]:[]);
-  const locations=rawLocations;
-  $('deliveryResult').classList.remove('hidden');
-  $('patientName').textContent=o.patient_name||'Patient name unavailable';
-  $('currentAwb').textContent=o.tracking_number;
-  $('assignedDriver').textContent=o.driver_name||'Not assigned';
-  $('orderStatus').textContent=returned?'RETURNED':[o.last_status,o.dropoff_status].filter(Boolean).join(' / ')||'Not available';
-  $('previousBlock').classList.toggle('hidden',locations.length===0);
-  $('locationBadge').textContent=returned
-    ? (locations.length
-        ? `Returned current order • ${locations.length} previous delivered ${locations.length===1?'location':'locations'}`
-        : 'Returned current order • no previous delivered location')
-    : (locations.length
-        ? `${locations.length} previous ${locations.length===1?'location':'locations'}`
-        : 'No eligible location');
-  $('previousCount').textContent=locations.length?`${locations.length} valid delivered found`:'';
-  $('previousLocations').innerHTML=locations.map((l,index)=>`<article class="location-history-card"><div class="location-card-heading"><div><span class="location-number">Location ${index+1}</span><strong>${esc(formatDate(l.delivery_complete_date))}</strong></div><span class="mono">${esc(l.tracking_number||'Previous AWB unavailable')}</span></div><div class="location-address"><span>Previous address</span><p>${esc(l.address||'Address not available')}</p></div><div class="location-coordinates"><span>${esc(l.latitude??'')}</span><span>${esc(l.longitude??'')}</span></div><button class="maps wide location-map-button" data-map-url="${esc(l.google_maps_url||'')}" data-location-awb="${esc(l.tracking_number||'')}">Open this pin in Google Maps</button></article>`).join('');
-  renderCalls(r.call_attempts||[]);
-  $('deliveryResult').scrollIntoView({behavior:'smooth',block:'start'});
-}
-function renderCalls(attempts){const first=attempts.some(x=>Number(x.attempt_number)===1),second=attempts.some(x=>Number(x.attempt_number)===2);$('call1').disabled=first;$('call1').classList.toggle('done',first);$('call1').textContent=first?'Attempt 1 recorded ✓':'Call attempt 1';$('call2').disabled=!first||second;$('call2').classList.toggle('done',second);$('call2').textContent=second?'Attempt 2 recorded ✓':'Call attempt 2';$('callStatus').textContent=second?'Two calls are recorded.':first?'Attempt 1 recorded. Attempt 2 unlocks after 60 seconds.':'Both call attempts must be started here.'}
-async function recordCall(){if(!state.delivery)return;try{const result=await api('/rest/v1/rpc/record_delivery_call',{method:'POST',body:{p_awb:state.delivery.current_order.tracking_number}});state.delivery.call_attempts.push({attempt_number:result.attempt_number,attempted_at:result.attempted_at});renderCalls(state.delivery.call_attempts);location.href=`tel:${String(result.phone||'').replace(/[^\d+]/g,'')}`}catch(error){$('callStatus').textContent=error.message}}
-$('call1').onclick=recordCall;$('call2').onclick=recordCall;
-$('previousLocations').addEventListener('click',async event=>{const button=event.target.closest('.location-map-button');if(!button||!state.delivery)return;const url=button.dataset.mapUrl;if(!url)return;window.open(url,'_blank','noopener');await logDelivery('MAP_OPENED',`${button.dataset.locationAwb||''}|${url}`)});
-function whatsappMessage(){const patient=state.delivery?.current_order?.patient_name||'Patient name unavailable';return `Aslam Alikum, Good Day Ma'am/Sir,\n\nI’m from DAWAK Pharmacy. Your medicine is ready for delivery. Could you please send your location and villa number. Thank you and wishing you good health and wellness.\n\nالسلام عليكم يومك سعيد أنا من صيدلية دواك.\nدواك جاهز للتوصيل الرجاء منك مشاركة الموقع ورقم الفيلا من خلال الرقم الذي سأتواصل معك من خلاله وشكرا لك مع تمنياتنا لك بدوام الصحة والعافية.\n\nThe delivery is for Patient Name: ${patient}`}
-$('whatsappText').onclick=async()=>{if(!state.delivery)return;const phone=String(state.delivery.current_order.phone||'').replace(/\D/g,'');if(!phone){alert('No patient phone number is available.');return}await logDelivery('WHATSAPP_PREPARED','message-only');window.open(`https://wa.me/${phone}?text=${encodeURIComponent(whatsappMessage())}`,'_blank','noopener')};
-async function logDelivery(action,details){try{await api('/rest/v1/rpc/log_delivery_activity',{method:'POST',body:{p_awb:state.delivery.current_order.tracking_number,p_action:action,p_details:String(details||'').slice(0,500)}})}catch{}}
-
-$('scanAwb').onclick=startScanner;$('stopScanner').onclick=stopScanner;
-async function startScanner(){notice('deliveryStatus','');if(typeof Html5Qrcode==='undefined'){notice('deliveryStatus','Camera scanner is unavailable. Enter the AWB manually.');return}$('scannerWrap').classList.remove('hidden');state.scanner=new Html5Qrcode('reader');try{await state.scanner.start({facingMode:'environment'},{fps:12,qrbox:{width:290,height:150},aspectRatio:1.7},async text=>{$('deliveryAwb').value=cleanAwb(text);await stopScanner();await lookupDelivery()},()=>{})}catch{notice('deliveryStatus','Allow camera permission or enter the AWB manually.');await stopScanner()}}
-async function stopScanner(){if(state.scanner){try{if(state.scanner.isScanning)await state.scanner.stop()}catch{}try{state.scanner.clear()}catch{}state.scanner=null}$('scannerWrap').classList.add('hidden')}
-
+// CASH CUSTODY
 // INDIVIDUAL PAYMENT RECORDS
 function updatePaymentButton(){const type=$('paymentType').value||'CASH';$('addItem').textContent=`Record ${type} AWB`}
 $('paymentType').addEventListener('change',updatePaymentButton);updatePaymentButton();

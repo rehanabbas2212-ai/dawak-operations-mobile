@@ -1,7 +1,7 @@
 {
-  "name": "Dawak Operations Mobile",
-  "short_name": "Dawak Ops",
-  "description": "Driver delivery assistant and cash custody tracker",
+  "name": "Dawak Cash Custody",
+  "short_name": "Cash Custody",
+  "description": "Secure cash custody and transport tracking",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
