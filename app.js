@@ -51,7 +51,7 @@ async function start(){
   fillHubs();await refreshCash();
   if(isCashAdmin()&&$('bagFromHub').value)await loadAvailableAwbs();
 }
-function logout(){stopArrivalScanner();state.token='';state.me=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];state.cashEditRecord=null;state.canDeleteAwbs=false;state.auditBatchId=null;state.auditBatchName='';state.auditItems=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Cash Custody v0.7.6';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden');closeCashEdit()}
+function logout(){stopArrivalScanner();state.token='';state.me=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];state.cashEditRecord=null;state.canDeleteAwbs=false;state.auditBatchId=null;state.auditBatchName='';state.auditItems=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Cash Custody v0.7.7';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden');closeCashEdit()}
 $('logout').onclick=logout;
 
 function fillHubs(){
@@ -209,6 +209,20 @@ function renderBatch(b){
   const auditActions=`<div class="batch-row-actions"><button class="secondary" onclick="showAudit('${b.id}')">History & AWBs</button>${state.canDeleteAwbs?`<button class="danger bag-delete" onclick="deleteWholeCashBag('${b.id}')">Delete Whole Bag</button>`:''}</div>`;
   return `<tr><td>${esc(b.batch_name)}</td><td>${esc(hubFor(b.origin_hub_id))} → ${esc(hubFor(b.destination_hub_id))}<br><small>Next checkpoint</small></td><td>${Number(b.item_count||0)}<br><small>${Number(b.cash_item_count||0)} CASH / ${Number(b.card_item_count||0)} CARD</small></td><td>AED ${Number(b.expected_amount||0).toFixed(2)}</td><td>${Number(b.card_item_count||0)}<br><small>AED ${Number(b.card_amount||0).toFixed(2)} reference</small></td><td><span class="pill">${esc(b.status)}</span></td><td>${esc(nameFor(b.current_custodian))}<br><small>${esc(hubFor(b.current_hub_id))}</small></td><td>${esc(nameFor(b.pending_to))}</td><td>${action}</td><td>${auditActions}</td></tr>`
 }
+async function loadRecipientMenus(){
+  const actionable=state.batches.filter(b=>b.current_custodian===state.me.id&&['OPEN','IN_TRANSIT'].includes(b.status));
+  await Promise.all(actionable.map(async b=>{
+    const select=$(`to-${b.id}`);
+    if(!select)return;
+    try{
+      const rows=await api('/rest/v1/rpc/list_custody_recipients',{method:'POST',body:{p_batch:b.id}});
+      select.innerHTML=rows.map(p=>`<option value="${p.id}">${esc(p.full_name||p.email)} (${esc(p.role)})</option>`).join('')||'<option value="">No authorized recipient</option>';
+    }catch(e){
+      select.innerHTML=`<option value="">${esc(e.message)}</option>`;
+    }
+  }));
+}
+
 window.handoverBag=async id=>{const to=$(`to-${id}`).value,file=$(`proof-handover-${id}`)?.files?.[0];if(!to){notice('cashStatus','Choose an authorized recipient.');return}busy(true);try{await api('/rest/v1/rpc/initiate_handover',{method:'POST',body:{p_batch:id,p_to:to,p_seal:$(`seal-${id}`).value,p_notes:''}});let message='Whole bag handover requested.';if(file){try{await saveCustodyProof(id,file,'HANDOVER')}catch(e){message+=` The handover is saved, but the photo failed: ${e.message}`}}await refreshCash();notice('cashStatus',message,!message.includes('failed'))}catch(e){notice('cashStatus',e.message)}finally{busy(false)}};
 window.acceptBag=async id=>{const file=$(`proof-accept-${id}`)?.files?.[0];busy(true);try{await api('/rest/v1/rpc/accept_handover',{method:'POST',body:{p_batch:id}});let message=state.me.role==='driver'?'You accepted the whole sealed bag.':'Bag arrived. Check its AWBs one by one.';if(file){try{await saveCustodyProof(id,file,'ACCEPTANCE')}catch(e){message+=` The acceptance is saved, but the photo failed: ${e.message}`}}await refreshCash();notice('cashStatus',message,!message.includes('failed'))}catch(e){notice('cashStatus',e.message)}finally{busy(false)}};
 
