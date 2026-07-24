@@ -30,3 +30,5 @@
 
 /* v0.7.4 owner-only whole-bag deletion */
 .bag-delete{background:#7f1d1d}.awb-admin-actions .bag-delete:not(:disabled){box-shadow:0 0 0 2px #fee2e2 inset}.awb-admin-actions button{min-width:130px}
+
+.history-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;margin-bottom:8px}.history-title-row h3{margin:0}.history-delete-button{min-width:190px}.history-title-row+.audit-item{margin-top:0}@media(max-width:620px){.history-title-row{align-items:stretch;flex-direction:column}.history-delete-button{width:100%}}

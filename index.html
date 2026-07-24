@@ -53,7 +53,7 @@
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">AWB LOOKUP</p><h2>Search payment AWB</h2></div><span class="safe-badge">Full custody chain</span></div>
           <div class="awb-row"><input id="cashSearchAwb" placeholder="Enter SD / AWB number" autocapitalize="characters"><button id="cashSearchButton" class="primary">Search</button></div>
-          <div id="ownerDeleteTools" class="owner-delete-tools hidden"><button id="manageTestAwbs" type="button" class="danger">Delete My Test AWBs</button><span class="muted">Visible only to Rehan's authorized login.</span></div>
+          <div id="ownerDeleteTools" class="owner-delete-tools hidden"><button id="manageTestAwbs" type="button" class="danger">Delete Standalone AWBs</button><span class="muted">Visible only to the authorized owner account.</span></div>
           <div id="cashSearchStatus"></div><div id="cashSearchResult" class="hidden"></div>
         </section>
 
@@ -109,13 +109,13 @@
   </div>
   <div id="testAwbModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="testAwbTitle">
     <div class="modal-card wide-modal">
-      <div class="section-heading"><div><p class="eyebrow">OWNER-ONLY CLEANUP</p><h2 id="testAwbTitle">Delete My Test AWBs</h2></div><button class="modal-close" type="button" onclick="closeTestAwbModal()">×</button></div>
-      <p class="muted">Only AWBs created by your own login and not attached to a transport bag are listed. Tick the test records you want to remove.</p>
+      <div class="section-heading"><div><p class="eyebrow">OWNER-ONLY CLEANUP</p><h2 id="testAwbTitle">Delete Standalone AWBs</h2></div><button class="modal-close" type="button" onclick="closeTestAwbModal()">×</button></div>
+      <p class="muted">All standalone AWBs that are not attached to a transport bag are listed. Tick the records you want to remove.</p>
       <div class="test-awb-toolbar"><label><input id="selectAllTestAwbs" type="checkbox"> Select all visible</label><span id="testAwbCount" class="pill">0 selected</span></div>
       <div id="testAwbList" class="test-awb-list"></div>
-      <label class="reason-field">Deletion reason<textarea id="testDeleteReason" rows="3" placeholder="Example: Removing test records created during setup"></textarea></label>
+      <label class="reason-field">Deletion reason<textarea id="testDeleteReason" rows="3" placeholder="Example: Removing incorrect or test records"></textarea></label>
       <div id="testDeleteStatus"></div>
-      <div class="modal-actions"><button type="button" class="secondary" onclick="closeTestAwbModal()">Cancel</button><button id="deleteSelectedTestAwbs" type="button" class="danger">Delete Selected Test AWBs</button></div>
+      <div class="modal-actions"><button type="button" class="secondary" onclick="closeTestAwbModal()">Cancel</button><button id="deleteSelectedTestAwbs" type="button" class="danger">Delete Selected Standalone AWBs</button></div>
     </div>
   </div>
   <div id="busy" class="busy hidden"><div class="spinner"></div><span>Working…</span></div>
