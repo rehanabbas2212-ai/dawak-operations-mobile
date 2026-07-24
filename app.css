@@ -15,20 +15,12 @@
 .awb-admin-actions{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0 8px}.danger{background:#b42318}.admin-note{margin:4px 0 14px;font-size:13px}.modal{position:fixed;inset:0;z-index:45;background:#0f172a99;display:flex;align-items:center;justify-content:center;padding:18px}.modal-card{width:min(920px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 20px 60px #0005}.modal-close{background:#64748b;width:42px;min-width:42px;padding:6px;font-size:24px;line-height:1}.edit-grid{grid-template-columns:repeat(3,1fr)}.edit-grid textarea{width:100%;margin-top:5px;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font:inherit;resize:vertical}.reason-field{grid-column:1/-1}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:14px}@media(max-width:760px){.edit-grid{grid-template-columns:1fr 1fr}}@media(max-width:520px){.edit-grid{grid-template-columns:1fr}.modal{padding:8px}.modal-card{padding:15px}.modal-actions{flex-direction:column-reverse}.modal-actions button{width:100%}}
 
 
-/* v0.7.2 owner-only test AWB cleanup */
-.owner-delete-tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
-.wide-modal{width:min(920px,calc(100vw - 24px))}
-.test-awb-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0}
-.test-awb-list{max-height:430px;overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel-soft)}
-.test-awb-row{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
-.test-awb-row:last-child{border-bottom:0}
-.test-awb-row:hover{background:rgba(73,108,255,.08)}
-.test-awb-row input{width:20px;height:20px}
-.test-awb-row span{display:flex;flex-direction:column;gap:4px}
-.test-awb-row small{color:var(--muted)}
-@media(max-width:640px){.test-awb-toolbar{align-items:flex-start;flex-direction:column}}
 
 /* v0.7.4 owner-only whole-bag deletion */
 .bag-delete{background:#7f1d1d}.awb-admin-actions .bag-delete:not(:disabled){box-shadow:0 0 0 2px #fee2e2 inset}.awb-admin-actions button{min-width:130px}
 
 .history-title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;margin-bottom:8px}.history-title-row h3{margin:0}.history-delete-button{min-width:190px}.history-title-row+.audit-item{margin-top:0}@media(max-width:620px){.history-title-row{align-items:stretch;flex-direction:column}.history-delete-button{width:100%}}
+
+/* v0.7.6 owner-only row and AWB deletion controls */
+.batch-row-actions{display:grid;gap:7px;min-width:170px}.batch-row-actions button{width:100%;min-height:42px}.audit-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.awb-summary-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}.delete-awb-inline{padding:7px 10px;min-height:34px;font-size:12px}.awb-history summary{padding-right:10px}.bag-delete{background:#7f1d1d}
+@media(max-width:700px){.audit-heading-actions{width:100%;justify-content:stretch}.audit-heading-actions>*{flex:1}.awb-summary-actions{align-items:flex-end;flex-direction:column}.batch-row-actions{min-width:150px}}

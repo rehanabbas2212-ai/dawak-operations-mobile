@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div><strong>Dawak Cash Custody</strong><span id="who">Cash Custody v0.7.1</span></div>
+    <div><strong>Dawak Cash Custody</strong><span id="who">Cash Custody v0.7.6</span></div>
     <div class="top-actions"><span id="onlineBadge" class="online">Online</span><button id="logout" class="ghost hidden">Log out</button></div>
   </header>
   <main>
@@ -53,7 +53,6 @@
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">AWB LOOKUP</p><h2>Search payment AWB</h2></div><span class="safe-badge">Full custody chain</span></div>
           <div class="awb-row"><input id="cashSearchAwb" placeholder="Enter SD / AWB number" autocapitalize="characters"><button id="cashSearchButton" class="primary">Search</button></div>
-          <div id="ownerDeleteTools" class="owner-delete-tools hidden"><button id="manageTestAwbs" type="button" class="danger">Delete Standalone AWBs</button><span class="muted">Visible only to the authorized owner account.</span></div>
           <div id="cashSearchStatus"></div><div id="cashSearchResult" class="hidden"></div>
         </section>
 
@@ -74,7 +73,7 @@
         <section class="card">
           <div class="section-heading"><div><p class="eyebrow">LIVE CUSTODY</p><h2>Transport bags</h2></div><button id="refreshCash" class="secondary">Refresh</button></div><div id="cashStatus"></div>
           <div id="cashSummary" class="summary-grid" aria-label="Cash custody summary"></div>
-          <div class="table-wrap"><table><thead><tr><th>Bag</th><th>Transport leg</th><th>AWBs</th><th>Cash total</th><th>Card records</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit</th></tr></thead><tbody id="batches"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>Bag</th><th>Transport leg</th><th>AWBs</th><th>Cash total</th><th>Card records</th><th>Status</th><th>Current holder</th><th>Pending to</th><th>Action</th><th>Audit / Delete</th></tr></thead><tbody id="batches"></tbody></table></div>
 
           <div id="arrivalPanel" class="audit hidden">
             <div class="section-heading"><div><p class="eyebrow">HUB RECONCILIATION</p><h3 id="arrivalTitle">Check arrived AWBs</h3></div><span id="arrivalCount" class="pill"></span></div>
@@ -105,17 +104,6 @@
       </div>
       <div id="editCashStatus"></div>
       <div class="modal-actions"><button type="button" class="secondary" onclick="closeCashEdit()">Cancel</button><button id="saveCashEdit" type="button" class="primary">Save correction</button></div>
-    </div>
-  </div>
-  <div id="testAwbModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="testAwbTitle">
-    <div class="modal-card wide-modal">
-      <div class="section-heading"><div><p class="eyebrow">OWNER-ONLY CLEANUP</p><h2 id="testAwbTitle">Delete Standalone AWBs</h2></div><button class="modal-close" type="button" onclick="closeTestAwbModal()">×</button></div>
-      <p class="muted">All standalone AWBs that are not attached to a transport bag are listed. Tick the records you want to remove.</p>
-      <div class="test-awb-toolbar"><label><input id="selectAllTestAwbs" type="checkbox"> Select all visible</label><span id="testAwbCount" class="pill">0 selected</span></div>
-      <div id="testAwbList" class="test-awb-list"></div>
-      <label class="reason-field">Deletion reason<textarea id="testDeleteReason" rows="3" placeholder="Example: Removing incorrect or test records"></textarea></label>
-      <div id="testDeleteStatus"></div>
-      <div class="modal-actions"><button type="button" class="secondary" onclick="closeTestAwbModal()">Cancel</button><button id="deleteSelectedTestAwbs" type="button" class="danger">Delete Selected Standalone AWBs</button></div>
     </div>
   </div>
   <div id="busy" class="busy hidden"><div class="spinner"></div><span>Working…</span></div>
