@@ -1,7 +1,7 @@
 "use strict";
 const cfg=window.DAWAK_CONFIG||{};
 const $=id=>document.getElementById(id);
-const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],hubAccess:[],arrivalScanner:null,arrivalBatch:null,arrivalItems:[],availableAwbs:[],batches:[],cashEditRecord:null};
+const state={token:sessionStorage.getItem('dawak_token')||'',me:null,hubs:[],profiles:[],hubAccess:[],arrivalScanner:null,arrivalBatch:null,arrivalItems:[],availableAwbs:[],batches:[],cashEditRecord:null,canDeleteAwbs:false,myTestAwbs:[]};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const notice=(id,text,ok=false)=>$(id).innerHTML=text?`<div class="status ${ok?'ok':'error'}">${esc(text)}</div>`:'';
 const busy=v=>$('busy').classList.toggle('hidden',!v);
@@ -36,20 +36,23 @@ async function start(){
   const profileResult=await api('/rest/v1/rpc/my_profile',{method:'POST',body:{}});
   state.me=Array.isArray(profileResult)?profileResult[0]:profileResult;
   if(!state.me)throw new Error('Your account is inactive.');
-  const [referenceData,hubAccess]=await Promise.all([
+  const [referenceData,hubAccess,canDeleteAwbs]=await Promise.all([
     api('/rest/v1/rpc/get_cash_reference_data',{method:'POST',body:{}}),
-    api(`/rest/v1/profile_hubs?select=hub_id,can_view_cash,can_manage_cash,can_receive_cash&profile_id=eq.${encodeURIComponent(state.me.id)}`)
+    api(`/rest/v1/profile_hubs?select=hub_id,can_view_cash,can_manage_cash,can_receive_cash&profile_id=eq.${encodeURIComponent(state.me.id)}`),
+    api('/rest/v1/rpc/is_awb_delete_owner',{method:'POST',body:{}})
   ]);
   state.hubs=referenceData?.hubs||[];
   state.profiles=referenceData?.profiles||[];
   state.hubAccess=hubAccess||[];
+  state.canDeleteAwbs=Boolean(canDeleteAwbs);
   $('loginCard').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden');
   $('who').textContent=`${state.me.full_name||state.me.email} • ${state.me.role} • ${myHubNames()}`;
   document.querySelectorAll('.cash-admin').forEach(x=>x.classList.toggle('hidden',!isCashAdmin()));
+  $('ownerDeleteTools').classList.toggle('hidden',!state.canDeleteAwbs);
   fillHubs();await refreshCash();
   if(isCashAdmin()&&$('bagFromHub').value)await loadAvailableAwbs();
 }
-function logout(){stopArrivalScanner();state.token='';state.me=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];state.cashEditRecord=null;sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Cash Custody v0.7.1';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden');closeCashEdit()}
+function logout(){stopArrivalScanner();state.token='';state.me=null;state.hubAccess=[];state.arrivalBatch=null;state.availableAwbs=[];state.cashEditRecord=null;state.canDeleteAwbs=false;state.myTestAwbs=[];sessionStorage.removeItem('dawak_token');$('app').classList.add('hidden');$('logout').classList.add('hidden');$('loginCard').classList.remove('hidden');$('who').textContent='Cash Custody v0.7.2';$('batches').innerHTML='';$('auditPanel').innerHTML='';$('auditPanel').classList.add('hidden');$('arrivalPanel').classList.add('hidden');closeCashEdit();closeTestAwbModal()}
 $('logout').onclick=logout;
 
 function fillHubs(){
@@ -76,15 +79,72 @@ $('addItem').onclick=async()=>{busy(true);try{
 
 // SEARCH ONE AWB
 $('cashSearchButton').onclick=searchCashAwb;$('cashSearchAwb').addEventListener('keydown',e=>{if(e.key==='Enter')searchCashAwb()});
-async function searchCashAwb(){const awb=cleanAwb($('cashSearchAwb').value);notice('cashSearchStatus','');$('cashSearchResult').classList.add('hidden');state.cashEditRecord=null;if(!awb){notice('cashSearchStatus','Enter an SD / AWB number.');return}busy(true);try{const result=await api('/rest/v1/rpc/search_cash_awb',{method:'POST',body:{p_awb:awb}});if(isCashAdmin()){try{state.cashEditRecord=await api('/rest/v1/rpc/get_payment_line_for_edit',{method:'POST',body:{p_awb:awb}})}catch(error){state.cashEditRecord=null;console.warn('Edit details unavailable:',error.message)}}renderCashSearch(result)}catch(e){notice('cashSearchStatus',e.message)}finally{busy(false)}}
-function renderCashSearch(r){const history=r.history||[],adminActions=isCashAdmin()&&state.cashEditRecord?`<div class="awb-admin-actions"><button class="secondary" onclick="openCashEdit()">Edit AWB</button><button class="danger" onclick="deleteCashAwb()" ${state.cashEditRecord.deletable?'':'disabled'}>Delete AWB</button></div>${state.cashEditRecord.deletable?'':`<p class="muted admin-note">Delete is locked because this AWB already has bag/custody history. Editing the AWB number and amount remains available with an audit reason.</p>`}`:'';$('cashSearchResult').classList.remove('hidden');$('cashSearchResult').innerHTML=`<div class="awb-detail"><div class="section-heading"><div><p class="eyebrow">${esc(r.payment_type)} AWB</p><h3>${esc(r.awb)}</h3></div><span class="pill">${esc(r.cash_status||r.payment_type)}</span></div><div class="info-grid"><div><span>Amount</span><strong>AED ${Number(r.amount||0).toFixed(2)}</strong></div><div><span>Collected by</span><strong>${esc(nameFor(r.collected_by))}</strong></div><div><span>First received at</span><strong>${esc(hubFor(r.first_receiving_hub_id))}</strong></div><div><span>Current location</span><strong>${esc(hubFor(r.current_cash_hub_id))}</strong></div><div><span>Final destination</span><strong>${esc(hubFor(r.final_destination_hub_id))}</strong></div><div><span>Current holder / bag</span><strong>${esc(nameFor(r.current_cash_custodian))}${r.active_batch_name?` • ${esc(r.active_batch_name)}`:''}</strong></div></div>${adminActions}<h3>AWB custody history</h3>${history.length?history.map(x=>`<div class="audit-item"><strong>${esc(formatDate(x.created_at))}</strong><div>${esc(eventLabel(x.event_type))}${x.batch_name?` • Bag ${esc(x.batch_name)}`:''}<br><small>${esc(nameFor(x.from_user_id))} → ${esc(nameFor(x.to_user_id))} • ${esc(hubFor(x.from_hub_id))} → ${esc(hubFor(x.to_hub_id))}${x.notes?` • ${esc(x.notes)}`:''}</small></div></div>`).join(''):'<p class="muted">No custody events yet.</p>'}</div>`;$('cashSearchResult').scrollIntoView({behavior:'smooth',block:'nearest'})}
+async function searchCashAwb(){const awb=cleanAwb($('cashSearchAwb').value);notice('cashSearchStatus','');$('cashSearchResult').classList.add('hidden');state.cashEditRecord=null;if(!awb){notice('cashSearchStatus','Enter an SD / AWB number.');return}busy(true);try{const result=await api('/rest/v1/rpc/search_cash_awb',{method:'POST',body:{p_awb:awb}});if(isCashAdmin()||state.canDeleteAwbs){try{state.cashEditRecord=await api('/rest/v1/rpc/get_payment_line_for_edit',{method:'POST',body:{p_awb:awb}})}catch(error){state.cashEditRecord=null;console.warn('Edit details unavailable:',error.message)}}renderCashSearch(result)}catch(e){notice('cashSearchStatus',e.message)}finally{busy(false)}}
+function renderCashSearch(r){
+  const history=r.history||[];
+  let adminActions='';
+  if(state.cashEditRecord){
+    const editButton=isCashAdmin()?'<button class="secondary" onclick="openCashEdit()">Edit AWB</button>':'';
+    const deleteButton=state.canDeleteAwbs?`<button class="danger" onclick="deleteCashAwb()" ${state.cashEditRecord.deletable?'':'disabled'}>Delete AWB</button>`:'';
+    const deleteNote=state.canDeleteAwbs&&!state.cashEditRecord.deletable?'<p class="muted admin-note">Delete is available only for AWBs created by your login that have not entered a transport bag. Editing may still be available.</p>':'';
+    if(editButton||deleteButton)adminActions=`<div class="awb-admin-actions">${editButton}${deleteButton}</div>${deleteNote}`;
+  }
+  $('cashSearchResult').classList.remove('hidden');
+  $('cashSearchResult').innerHTML=`<div class="awb-detail"><div class="section-heading"><div><p class="eyebrow">${esc(r.payment_type)} AWB</p><h3>${esc(r.awb)}</h3></div><span class="pill">${esc(r.cash_status||r.payment_type)}</span></div><div class="info-grid"><div><span>Amount</span><strong>AED ${Number(r.amount||0).toFixed(2)}</strong></div><div><span>Collected by</span><strong>${esc(nameFor(r.collected_by))}</strong></div><div><span>First received at</span><strong>${esc(hubFor(r.first_receiving_hub_id))}</strong></div><div><span>Current location</span><strong>${esc(hubFor(r.current_cash_hub_id))}</strong></div><div><span>Final destination</span><strong>${esc(hubFor(r.final_destination_hub_id))}</strong></div><div><span>Current holder / bag</span><strong>${esc(nameFor(r.current_cash_custodian))}${r.active_batch_name?` • ${esc(r.active_batch_name)}`:''}</strong></div></div>${adminActions}<h3>AWB custody history</h3>${history.length?history.map(x=>`<div class="audit-item"><strong>${esc(formatDate(x.created_at))}</strong><div>${esc(eventLabel(x.event_type))}${x.batch_name?` • Bag ${esc(x.batch_name)}`:''}<br><small>${esc(nameFor(x.from_user_id))} → ${esc(nameFor(x.to_user_id))} • ${esc(hubFor(x.from_hub_id))} → ${esc(hubFor(x.to_hub_id))}${x.notes?` • ${esc(x.notes)}`:''}</small></div></div>`).join(''):'<p class="muted">No custody events yet.</p>'}</div>`;
+  $('cashSearchResult').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
 
 function setEditCoreEnabled(enabled){for(const id of ['editPaymentType','editOrderFacility','editCollectedBy','editReceivingHub','editDestinationHub'])$(id).disabled=!enabled}
 window.openCashEdit=()=>{const r=state.cashEditRecord;if(!r)return;$('editAwb').value=r.awb||'';$('editPaymentType').value=r.payment_type||'CASH';$('editAmount').value=Number(r.amount||0).toFixed(2);$('editOrderFacility').value=r.order_hub_id||'';$('editCollectedBy').value=r.collected_by||'';$('editReceivingHub').value=r.first_receiving_hub_id||'';$('editDestinationHub').value=r.destination_hub_id||'';$('editReason').value='';setEditCoreEnabled(Boolean(r.core_fields_editable));$('editRestriction').textContent=r.core_fields_editable?'All fields may be corrected because this AWB is not yet in a transport bag.':'This AWB already has custody history. Only AWB number and amount may be corrected.';$('cashEditModal').classList.remove('hidden')};
 window.closeCashEdit=()=>{if($('cashEditModal'))$('cashEditModal').classList.add('hidden')};
 $('saveCashEdit').onclick=async()=>{const r=state.cashEditRecord;if(!r)return;const reason=$('editReason').value.trim();if(!reason){notice('editCashStatus','Enter the correction reason.');return}busy(true);notice('editCashStatus','');try{await api('/rest/v1/rpc/edit_payment_line',{method:'POST',body:{p_payment_line:r.id,p_awb:$('editAwb').value,p_type:$('editPaymentType').value,p_amount:Number($('editAmount').value),p_order_facility:$('editOrderFacility').value,p_collected_by:$('editCollectedBy').value||null,p_receiving_hub:$('editReceivingHub').value,p_destination:$('editDestinationHub').value,p_reason:reason}});closeCashEdit();$('cashSearchAwb').value=cleanAwb($('editAwb').value);await Promise.all([searchCashAwb(),loadAvailableAwbs(),refreshCash()]);notice('cashSearchStatus','AWB updated and the correction was added to the audit log.',true)}catch(e){notice('editCashStatus',e.message)}finally{busy(false)}};
-window.deleteCashAwb=async()=>{const r=state.cashEditRecord;if(!r||!r.deletable)return;const reason=prompt(`Reason for deleting ${r.awb}:`);if(!reason?.trim())return;if(!confirm(`Delete ${r.awb}? This is allowed only because it has not entered a transport bag.`))return;busy(true);try{await api('/rest/v1/rpc/delete_payment_line',{method:'POST',body:{p_payment_line:r.id,p_reason:reason.trim()}});state.cashEditRecord=null;$('cashSearchResult').innerHTML='';$('cashSearchResult').classList.add('hidden');$('cashSearchAwb').value='';notice('cashSearchStatus','AWB deleted. The deletion reason remains in the admin audit log.',true);await Promise.all([loadAvailableAwbs(),refreshCash()])}catch(e){notice('cashSearchStatus',e.message)}finally{busy(false)}};
+window.deleteCashAwb=async()=>{const r=state.cashEditRecord;if(!state.canDeleteAwbs||!r||!r.deletable)return;const reason=prompt(`Reason for deleting ${r.awb}:`);if(!reason?.trim())return;if(!confirm(`Delete ${r.awb}? This is allowed only because it has not entered a transport bag.`))return;busy(true);try{await api('/rest/v1/rpc/delete_payment_line',{method:'POST',body:{p_payment_line:r.id,p_reason:reason.trim()}});state.cashEditRecord=null;$('cashSearchResult').innerHTML='';$('cashSearchResult').classList.add('hidden');$('cashSearchAwb').value='';notice('cashSearchStatus','AWB deleted. The deletion reason remains in the admin audit log.',true);await Promise.all([loadAvailableAwbs(),refreshCash()])}catch(e){notice('cashSearchStatus',e.message)}finally{busy(false)}};
 function eventLabel(v){return ({CREATED:'Bag created',HANDOVER_REQUESTED:'Bag handover requested',ACCEPTED:'Bag accepted',PROOF_UPLOADED:'Custody proof photo added',DRIVER_CASH_RECEIVED:'Cash received from collecting driver',CARD_RECORDED:'Card payment recorded',ADDED_TO_BAG:'Added to transport bag',BAG_HANDOVER_REQUESTED:'Bag handover requested',BAG_ACCEPTED_BY_DRIVER:'Bag accepted by driver',ARRIVED_AT_HUB:'Bag arrived at hub',FINAL_RECEIVED:'Final cash received',CARD_ACKNOWLEDGED:'Card record acknowledged',READY_FOR_ONWARD:'Checked; awaiting onward transport',EXCEPTION:'Exception reported'})[v]||String(v||'').replaceAll('_',' ')}
+
+
+// OWNER-ONLY TEST AWB CLEANUP
+window.closeTestAwbModal=()=>{
+  $('testAwbModal')?.classList.add('hidden');
+  state.myTestAwbs=[];
+  if($('selectAllTestAwbs'))$('selectAllTestAwbs').checked=false;
+  if($('testDeleteReason'))$('testDeleteReason').value='';
+  notice('testDeleteStatus','');
+};
+function selectedTestAwbIds(){return [...document.querySelectorAll('.test-awb-check:checked')].map(x=>x.value)}
+function updateTestAwbCount(){const count=selectedTestAwbIds().length;$('testAwbCount').textContent=`${count} selected`}
+function renderMyTestAwbs(){
+  const rows=state.myTestAwbs||[];
+  $('testAwbList').innerHTML=rows.length?rows.map(x=>`<label class="test-awb-row"><input class="test-awb-check" type="checkbox" value="${esc(x.payment_line_id)}"><span><strong>${esc(x.awb)}</strong><small>${esc(x.payment_type)} • AED ${Number(x.amount||0).toFixed(2)} • ${esc(formatDate(x.created_at))} • ${esc(hubFor(x.origin_hub_id))} → ${esc(hubFor(x.destination_hub_id))}</small></span></label>`).join(''):'<p class="muted">No deletable AWBs created by your login were found.</p>';
+  document.querySelectorAll('.test-awb-check').forEach(x=>x.addEventListener('change',updateTestAwbCount));
+  $('selectAllTestAwbs').checked=false;
+  updateTestAwbCount();
+}
+async function openTestAwbModal(){
+  if(!state.canDeleteAwbs)return;
+  busy(true);notice('testDeleteStatus','');
+  try{
+    state.myTestAwbs=await api('/rest/v1/rpc/list_my_deletable_awbs',{method:'POST',body:{}})||[];
+    renderMyTestAwbs();
+    $('testAwbModal').classList.remove('hidden');
+  }catch(e){notice('cashSearchStatus',e.message)}finally{busy(false)}
+}
+$('manageTestAwbs').onclick=openTestAwbModal;
+$('selectAllTestAwbs').addEventListener('change',e=>{document.querySelectorAll('.test-awb-check').forEach(x=>x.checked=e.target.checked);updateTestAwbCount()});
+$('deleteSelectedTestAwbs').onclick=async()=>{
+  const ids=selectedTestAwbIds(),reason=$('testDeleteReason').value.trim();
+  notice('testDeleteStatus','');
+  if(!ids.length){notice('testDeleteStatus','Select at least one test AWB.');return}
+  if(reason.length<3){notice('testDeleteStatus','Enter a deletion reason.');return}
+  if(!confirm(`Delete ${ids.length} selected test AWB${ids.length===1?'':'s'}? This cannot be undone.`))return;
+  busy(true);
+  try{
+    const result=await api('/rest/v1/rpc/delete_my_test_awbs',{method:'POST',body:{p_payment_lines:ids,p_reason:reason}});
+    notice('testDeleteStatus',`${result?.deleted_count||0} test AWB(s) deleted.${result?.skipped_count?` ${result.skipped_count} skipped because they were no longer eligible.`:''}`,true);
+    state.myTestAwbs=await api('/rest/v1/rpc/list_my_deletable_awbs',{method:'POST',body:{}})||[];
+    renderMyTestAwbs();
+    await Promise.all([loadAvailableAwbs(),refreshCash()]);
+  }catch(e){notice('testDeleteStatus',e.message)}finally{busy(false)}
+};
 
 // CREATE A MIXED-DESTINATION TRANSPORT BAG
 $('refreshAvailableAwbs').onclick=loadAvailableAwbs;$('bagFromHub').addEventListener('change',loadAvailableAwbs);
